@@ -20,10 +20,36 @@ class Board extends React.Component {
     );
   }
 
-  render() {       
+  render() {
+    const numOfRows = 3;
+    const numOfCols = 3;
+    let rowIndices = [];
+    let colIndices = [];
+    for (let i = 0; i < numOfRows; i++) {
+      rowIndices.push(i);
+    }
+    for (let j = 0; j < numOfCols; j++) {
+      colIndices.push(j);
+    }
+
+    const squares = rowIndices.map(row => {
+      return (
+        <div key={row} className="board-row">
+          {colIndices.map(col => {
+            return (
+              <span key={col}>
+                {this.renderSquare(row * numOfCols + col)}
+              </span>
+            );
+          })}
+        </div>
+      );
+    });
+
     return (
-      <div>        
-        <div className="board-row">
+      <div>
+        {squares}        
+        {/* <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
           {this.renderSquare(2)}
@@ -37,7 +63,7 @@ class Board extends React.Component {
           {this.renderSquare(6)}
           {this.renderSquare(7)}
           {this.renderSquare(8)}
-        </div>
+        </div> */}
       </div>
     );
   }
@@ -49,6 +75,8 @@ class Game extends React.Component {
     this.state = {
       history: [{
         squares: Array(9).fill(null),
+        lastMovePos: -1,
+        lastMoveTurn: null
       }],
       stepNumber: 0,
       xIsNext: true,
@@ -66,6 +94,8 @@ class Game extends React.Component {
     this.setState({
       history: history.concat([{
         squares: squares,
+        lastMovePos: i,
+        lastMoveTurn: squares[i]
       }]),
       stepNumber: history.length,
       xIsNext: !this.state.xIsNext,
@@ -79,18 +109,30 @@ class Game extends React.Component {
     });
   }
 
+  convertSquareIndexToRowAndColumn(idx) {
+    return {
+      row: Math.floor(idx / 3),
+      col: idx % 3
+    };
+  }
+
   render() {
     const history = this.state.history;
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
 
     const moves = history.map((step, move) => {
+      const lastMoveRowAndColumn = this.convertSquareIndexToRowAndColumn(step.lastMovePos);
       const desc = move ?
-        'Go to move #' + move :
-        'Go to game start';
+        'Go to move #' + move + ' (' + step.lastMoveTurn + ': ' + lastMoveRowAndColumn.row + ', ' + lastMoveRowAndColumn.col + ')' :
+        'Go to game start (player: row, col)';
+      const isMoveCurrentlySelected = this.state.stepNumber === move;
       return (
         <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+          <button onClick={() => this.jumpTo(move)} 
+            className={isMoveCurrentlySelected ? 'selected-move' : ''}>
+            {desc}
+          </button>
         </li>
       );
     });
