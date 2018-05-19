@@ -21,10 +21,6 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-  constructor(props) {
-    super(props);    
-  }
-
   renderSquare(i, isOneOfWinnerThree) {    
     return ( 
       <Square 
