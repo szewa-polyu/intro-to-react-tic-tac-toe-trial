@@ -52,3 +52,15 @@ ol, ul {
 .selected-move {
   color: red;
 }
+
+.x-square {
+  color: blue;
+}
+
+.o-square {
+  color: orange;
+}
+
+.winner-square {
+  color: purple;
+}
