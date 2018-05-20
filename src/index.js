@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import {GameContext, defaultGameParams} from './game-context';
 
 function Square(props) {
+  const gameParams = props.gameParams;
   const squareValue = props.value;
   let btnClassName = "square";
-  if (squareValue === xSymbol()) {
+  if (squareValue === gameParams.xSymbol) {
     btnClassName += " x-square";
-  } else if (squareValue === oSymbol()) {
+  } else if (squareValue === gameParams.oSymbol) {
     btnClassName += " o-square";  
   }
   if (props.isOneOfWinnerThree) {
@@ -22,18 +24,24 @@ function Square(props) {
 
 class Board extends React.Component {
   renderSquare(i, isOneOfWinnerThree) {    
-    return ( 
-      <Square 
-        value={this.props.squares[i]}
-        isOneOfWinnerThree={isOneOfWinnerThree}
-        onClick={() => this.props.onClick(i)}
-      />
+    return (
+      <GameContext.Consumer>
+        {gameParams => (
+          <Square
+            gameParams={gameParams}
+            value={this.props.squares[i]}
+            isOneOfWinnerThree={isOneOfWinnerThree}
+            onClick={() => this.props.onClick(i)}
+          />
+        )}        
+      </GameContext.Consumer>
     );
   }
 
   render() {
-    const numOfRows = this.props.rows;
-    const numOfCols = this.props.cols;
+    const gameParams = this.props.gameParams;
+    const numOfRows = gameParams.numOfRows;
+    const numOfCols = gameParams.numOfCols;
     let rowIndices = [];
     let colIndices = [];
     for (let i = 0; i < numOfRows; i++) {
@@ -47,7 +55,7 @@ class Board extends React.Component {
       return (
         <div key={row} className="board-row">
           {colIndices.map(col => {
-            const squareIdx = convertRowAndColumnToSquareIndex(row, col, numOfCols);
+            const squareIdx = gameParams.convertRowAndColumnToSquareIndex(row, col, numOfCols);
             let isOneOfWinnerThree = false;
             if (this.props.winnerThree !== null) {
               isOneOfWinnerThree = this.props.winnerThree.includes(squareIdx);
@@ -88,9 +96,10 @@ class Board extends React.Component {
 class Game extends React.Component {
   constructor(props) {
     super(props);
+    const gameParams = this.props.gameParams;
     this.state = {
       history: [{
-        squares: Array(props.rows * props.cols).fill(null),
+        squares: Array(gameParams.numOfRows * gameParams.numOfCols).fill(null),
         lastMovePos: -1,
         lastMoveTurn: null
       }],
@@ -101,13 +110,14 @@ class Game extends React.Component {
   }
 
   handleClick(i) {
+    const gameParams = this.props.gameParams;
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const current = history[history.length - 1];
     const squares = current.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
+    if (gameParams.calculateWinner(squares) || squares[i]) {
       return;
     }
-    squares[i] = this.state.xIsNext ? xSymbol() : oSymbol();
+    squares[i] = this.state.xIsNext ? gameParams.xSymbol : gameParams.oSymbol;
     this.setState({
       history: history.concat([{
         squares: squares,
@@ -133,15 +143,16 @@ class Game extends React.Component {
   }
 
   render() {
-    const numOfRows = this.props.rows;
-    const numOfCols = this.props.cols;
+    const gameParams = this.props.gameParams;
+    const numOfRows = gameParams.numOfRows;
+    const numOfCols = gameParams.numOfCols;
 
     const history = this.state.history;
     const current = history[this.state.stepNumber];
-    const winnerThree = calculateWinner(current.squares);
+    const winnerThree = gameParams.calculateWinner(current.squares);
 
     let moves = history.map((step, move) => {
-      const lastMoveRowAndColumn = convertSquareIndexToRowAndColumn(step.lastMovePos, numOfCols);
+      const lastMoveRowAndColumn = gameParams.convertSquareIndexToRowAndColumn(step.lastMovePos, numOfCols);
       const desc = move ?
         'Go to move #' + move + ' (' + step.lastMoveTurn + ': ' + lastMoveRowAndColumn.row + ', ' + lastMoveRowAndColumn.col + ')' :
         'Go to game start (player: row, col)';
@@ -168,19 +179,22 @@ class Game extends React.Component {
       // draw game
       status = 'Draw game';
     } else {
-      status = 'Next player: ' + (this.state.xIsNext ? xSymbol() : oSymbol());
+      status = 'Next player: ' + (this.state.xIsNext ? gameParams.xSymbol : gameParams.oSymbol);
     } 
 
     return (
       <div className="game">
         <div className="game-board">
-          <Board
-            rows={numOfRows}
-            cols={numOfCols}
-            squares={current.squares}
-            winnerThree={winnerThree}
-            onClick={(i) => this.handleClick(i)}
-          />
+          <GameContext.Consumer>
+            {gameParams => (
+              <Board
+                gameParams={gameParams}
+                squares={current.squares}
+                winnerThree={winnerThree}
+                onClick={(i) => this.handleClick(i)}
+              />
+            )}          
+          </GameContext.Consumer>
         </div>
         <div className="game-info">
           <div>{status}</div>
@@ -198,48 +212,38 @@ class Game extends React.Component {
 
 // ========================================
 
+class GameContextProvider extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      gameParams: defaultGameParams
+    };
+  }
+
+  render() {
+    return (
+      <GameContext.Provider value={this.state.gameParams}>
+        {this.props.children}
+      </GameContext.Provider>      
+    );
+  }
+}
+
+class App extends React.Component {
+  render() {
+    return (
+      <GameContextProvider>
+        <GameContext.Consumer>
+          {value => (
+            <Game gameParams={value} />
+          )}          
+        </GameContext.Consumer>
+      </GameContextProvider>
+    );
+  }
+}
+
 ReactDOM.render(
-  <Game rows={3} cols={3} 
-    isXStartFirst={false} 
-    isDefaultSortMoveDescend={true} />,
+  <App />,
   document.getElementById('root')
 );
-
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return lines[i];
-    }
-  }
-  return null;
-}
-
-function convertSquareIndexToRowAndColumn(idx, numOfCols) {
-  return {
-    row: Math.floor(idx / numOfCols),
-    col: idx % numOfCols
-  };
-}
-
-function convertRowAndColumnToSquareIndex(row, col, numOfCols) {
-  return row * numOfCols + col;
-}
-
-function xSymbol() {
-  return 'X';
-}
-
-function oSymbol() {
-  return 'O';
-}
