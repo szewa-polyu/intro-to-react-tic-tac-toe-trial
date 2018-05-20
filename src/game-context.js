@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const defaultGameParams = {
+const defaultGameParams = {
     xSymbol: 'X',
     oSymbol: 'O',
     numOfRows: 3,
@@ -37,6 +37,28 @@ export const defaultGameParams = {
     }
 };
 
-export const GameContext = React.createContext(
+const GameContext = React.createContext(
     defaultGameParams  // default value
 );
+
+class GameContextProvider extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        gameParams: defaultGameParams
+      };
+    }
+  
+    render() {
+      return (
+        <GameContext.Provider value={this.state.gameParams}>
+          {this.props.children}
+        </GameContext.Provider>      
+      );
+    }
+}
+
+export {
+    GameContext,
+    GameContextProvider
+}

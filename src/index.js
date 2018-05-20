@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import {GameContext, defaultGameParams} from './game-context';
+import {GameContext, GameContextProvider} from './game-context';
 
 function Square(props) {
   const gameParams = props.gameParams;
@@ -211,23 +211,6 @@ class Game extends React.Component {
 }
 
 // ========================================
-
-class GameContextProvider extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      gameParams: defaultGameParams
-    };
-  }
-
-  render() {
-    return (
-      <GameContext.Provider value={this.state.gameParams}>
-        {this.props.children}
-      </GameContext.Provider>      
-    );
-  }
-}
 
 class App extends React.Component {
   render() {
