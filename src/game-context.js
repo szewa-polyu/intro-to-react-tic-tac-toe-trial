@@ -1,3 +1,5 @@
+// https://reactjs.org/docs/context.html#reactcreatecontext
+
 import React from 'react';
 
 const defaultGameParams = {
@@ -38,7 +40,10 @@ const defaultGameParams = {
 };
 
 const GameContext = React.createContext(
-    defaultGameParams  // default value
+    // The defaultValue argument is ONLY used 
+    // by a Consumer when it does NOT have 
+    // a matching Provider above it in the tree.
+    defaultGameParams
 );
 
 class GameContextProvider extends React.Component {
@@ -51,6 +56,9 @@ class GameContextProvider extends React.Component {
   
     render() {
       return (
+        // the prop here MUST be called value,
+        // it is to be passed to Consumers
+        // that are descendants of this Provider
         <GameContext.Provider value={this.state.gameParams}>
           {this.props.children}
         </GameContext.Provider>      
